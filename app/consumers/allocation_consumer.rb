@@ -13,10 +13,6 @@ class AllocationConsumer < Racecar::Consumer
     elsif data[:action] == 'set_driver_location_done'
       set_driver_location_done(data)
     end
-
-    puts "========================="
-    puts "DATA = #{data}"
-    puts "========================="
   end
 
   def set_driver_location(data)
@@ -24,7 +20,6 @@ class AllocationConsumer < Racecar::Consumer
     @driver_location.destroy if @driver_location
 
     @driver_location = DriverLocation.new(data[:driver_location])
-    # @driver_location.status = 'online'
     @driver_location.save
   end
 
@@ -37,13 +32,7 @@ class AllocationConsumer < Racecar::Consumer
   def get_driver(data)
     driver_locations = DriverLocation.where("status = 'online'")
     driver_locations = driver_locations.where("service_type = '#{data[:service_type]}'")
-
-    driver_locations = driver_locations.select do |driver_location|
-      destination = [driver_location.lat.to_f, driver_location.lng.to_f]
-      origin = [data[:origin][:lat], data[:origin][:lng]]
-      get_distance(origin, destination) < 20.0
-    end
-
+    driver_locations = select_nearby_driver(data, driver_locations, 20)
     driver_location = driver_locations.sample
 
     if driver_location
@@ -53,47 +42,32 @@ class AllocationConsumer < Racecar::Consumer
     end
   end
 
+  def select_nearby_driver(data, driver_locations, max_distance)
+    driver_locations.select do |driver_location|
+      destination = [driver_location.lat.to_f, driver_location.lng.to_f]
+      origin = [data[:origin][:lat], data[:origin][:lng]]
+      get_distance(origin, destination) < max_distance
+    end
+  end
+
   def driver_found(driver_location, data)
     driver_location.order_id = data[:order_id]
     driver_location.status = 'busy'
     driver_location.save
-
-    # order = Order.find(data[:order_id])
-    # order.driver_id = driver_location.driver_id
-    # order.save
-
     send_driver_id_to_application(data[:order_id], driver_location.driver_id)
-
-    puts "=========================================="
-    puts "CONVERTED DATA      = #{data}"
-    puts "DRIVER ID           = #{driver_location.driver_id}"
-    puts "=========================================="
   end
 
   def driver_not_found(data)
     sleep(3)
-    kafka = Kafka.new(
-      seed_brokers: ['127.0.0.1:9092'],
-      client_id: 'goride',
-    )
-    kafka.deliver_message("#{data}", topic: 'driver_location')
-
-    puts "=========================================="
-    puts "UNAVAILABLE DRIVER AT THE MOMENT"
-    puts "=========================================="
+    deliver_message(data, 'driver_location')
   end
 
   def send_driver_id_to_application(order_id, driver_id)
-    kafka = Kafka.new(
-      seed_brokers: ['127.0.0.1:9092'],
-      client_id: 'goride',
-    )
     data = {}
     data[:action] = 'send_driver_id'
     data[:order_id] = order_id
     data[:driver_id] = driver_id
-      
-    kafka.deliver_message("#{data}", topic: 'application')
+    deliver_message(data, 'application')
   end
 
   def set_driver_location_done(data)
@@ -119,5 +93,13 @@ class AllocationConsumer < Racecar::Consumer
 
     result = rm * c # Delta in meters
     result = result / 1000
+  end
+
+  def deliver_message(data, topic)
+    kafka = Kafka.new(
+      seed_brokers: ['127.0.0.1:9092'],
+      client_id: 'goride',
+    )
+    kafka.deliver_message("#{data}", topic: topic)
   end
 end
