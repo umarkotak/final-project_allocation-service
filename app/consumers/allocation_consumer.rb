@@ -9,6 +9,11 @@ class AllocationConsumer < Racecar::Consumer
       puts "========================="
       puts "DATA = #{data}"
       puts "========================="
+    elsif data[:action] == 'unset_driver_location'
+      unset_driver_location(data)
+      puts "========================="
+      puts "DATA = #{data}"
+      puts "========================="
     end
   end
 
@@ -17,6 +22,12 @@ class AllocationConsumer < Racecar::Consumer
     @driver_location.destroy if @driver_location
 
     @driver_location = DriverLocation.new(data[:driver_location])
+    @driver_location.save
+  end
+
+  def unset_driver_location(data)
+    @driver_location = DriverLocation.find_by(driver_id: data[:driver_id])
+    @driver_location.status = 'offline'
     @driver_location.save
   end
 end
