@@ -13,6 +13,11 @@ class AllocationConsumer < Racecar::Consumer
     elsif data[:action] == 'set_driver_location_done'
       set_driver_location_done(data)
     end
+
+    puts '================================================='
+    puts "ACTION  = #{data[:action]}"
+    puts "DATA    = #{data}"
+    puts '================================================='
   end
 
   def set_driver_location(data)
