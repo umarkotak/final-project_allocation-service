@@ -30,6 +30,7 @@ class AllocationConsumer < Racecar::Consumer
 
   def unset_driver_location(data)
     @driver_location = DriverLocation.find_by(driver_id: data[:driver_id])
+    @driver_location.order_id = nil
     @driver_location.status = 'offline'
     @driver_location.save
   end
