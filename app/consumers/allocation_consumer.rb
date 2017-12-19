@@ -75,6 +75,9 @@ class AllocationConsumer < Racecar::Consumer
 
   def set_driver_location_done(data)
     driver_location = DriverLocation.find_by(driver_id: data[:driver_id])
+    driver_location.location = data[:location]
+    driver_location.lat = data[:coordinate][:lat]
+    driver_location.lng = data[:coordinate][:lng]
     driver_location.order_id = nil
     driver_location.status = 'online'
     driver_location.save
