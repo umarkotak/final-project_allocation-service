@@ -4,13 +4,14 @@ class AllocationConsumer < Racecar::Consumer
   def process(message)
     data = eval(message.value)
 
-    if data[:action] == 'set_driver_location'
+    case data[:action]
+    when 'set_driver_location'
       set_driver_location(data)
-    elsif data[:action] == 'unset_driver_location'
+    when 'unset_driver_location'
       unset_driver_location(data)
-    elsif data[:action] == 'get_driver'
+    when 'get_driver'
       get_driver(data)
-    elsif data[:action] == 'set_driver_location_done'
+    when 'set_driver_location_done'
       set_driver_location_done(data)
     end
 
@@ -41,11 +42,7 @@ class AllocationConsumer < Racecar::Consumer
     driver_locations = select_nearby_driver(data, driver_locations, 20)
     driver_location = driver_locations.sample
 
-    if driver_location
-      driver_found(driver_location, data)
-    else
-      driver_not_found(data)
-    end
+    driver_location ? driver_found(driver_location, data) : driver_not_found(data)
   end
 
   def select_nearby_driver(data, driver_locations, max_distance)
