@@ -64,7 +64,7 @@ class AllocationConsumer < Racecar::Consumer
   end
 
   def driver_not_found(data)
-    sleep(3)
+    sleep(2)
     deliver_message(data, 'driver_location')
   end
 
