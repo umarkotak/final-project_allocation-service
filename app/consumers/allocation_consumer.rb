@@ -23,10 +23,13 @@ class AllocationConsumer < Racecar::Consumer
 
   def set_driver_location(data)
     @driver_location = DriverLocation.find_by(driver_id: data[:driver_location][:driver_id])
-    @driver_location.destroy if @driver_location
 
-    @driver_location = DriverLocation.new(data[:driver_location])
-    @driver_location.save
+    if @driver_location
+      @driver_location.update(data[:driver_location])
+    else
+      @driver_location = DriverLocation.new(data[:driver_location])
+      @driver_location.save
+    end
   end
 
   def unset_driver_location(data)
