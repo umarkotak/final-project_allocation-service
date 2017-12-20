@@ -42,7 +42,7 @@ class AllocationConsumer < Racecar::Consumer
   def get_driver(data)
     driver_locations = DriverLocation.where("status = 'online'")
     driver_locations = driver_locations.where("service_type = '#{data[:service_type]}'")
-    driver_locations = select_nearby_driver(data, driver_locations, 20)
+    driver_locations = select_nearby_driver(data, driver_locations, 5)
     driver_location = driver_locations.sample
 
     driver_location ? driver_found(driver_location, data) : driver_not_found(data)
